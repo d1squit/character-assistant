@@ -86,9 +86,9 @@ function createWindow () {
 
 	mainWindow.accessMove = true;
 
-	function WindowMove (target={x: null, y: null}, speed=null) {
+	function WindowMove (target={x: null, y: null}, speed=null, moveMouse=false) {
 		this.initializeMove = () => {
-			if (Date.now() - this.lastInit < this.tickTime) return;
+			if (Math.abs(Date.now() - this.lastInit) < this.tickTime) return;
 
 			this.required_moves = [];
 			this.completed_moves = [];
@@ -122,6 +122,8 @@ function createWindow () {
 			this.moveLeftTick(this._target.x, speed);
 			this.moveDownTick(this._target.y, speed);
 			this.moveUpTick(this._target.y, speed);
+
+			console.log(this.moveMouse)
 		};
 
 		Object.defineProperty(this, 'target', {
@@ -137,8 +139,10 @@ function createWindow () {
 			configurable: true
 		});
 
+		this.moveMouse = moveMouse;
+
 		this.tickTime = 16;
-		this.lastInit = Date.now();
+		this.lastInit = 0;
 		this._target = target;
 		this.speed = speed;
 		this.accessMove = true;
@@ -163,6 +167,7 @@ function createWindow () {
 			if (this.position.x - this.speed < this._target.x) {
 				this.position.x += this.speed;
 				if (Math.round(this.position.x) && Math.round(this.position.y)) mainWindow.setPosition(Math.round(this.position.x), Math.round(this.position.y));
+				if (this.moveMouse) robot.moveMouse(this.position.x + mainWindow.getSize()[0] / 2, this.position.y + mainWindow.getSize()[1] / 2);
 				moveRightTick.id = setTimeout(moveRightTick, this.tickTime, this._target.x, this.speed);
 			} else if (Math.round(this.position.x) != this._target.x) {
 				mainWindow.setPosition(this._target.x, Math.round(this.position.y));
@@ -176,7 +181,8 @@ function createWindow () {
 
 			if (this.position.x - this.speed > this._target.x) {
 				this.position.x -= this.speed;
-				if (Math.round(this.position.x - this.speed) && Math.round(this.position.y)) mainWindow.setPosition(Math.round(this.position.x), Math.round(this.position.y));
+				if (Math.round(this.position.x) && Math.round(this.position.y)) mainWindow.setPosition(Math.round(this.position.x), Math.round(this.position.y));
+				if (this.moveMouse) robot.moveMouse(this.position.x + mainWindow.getSize()[0] / 2, this.position.y + mainWindow.getSize()[1] / 2);
 				moveLeftTick.id = setTimeout(moveLeftTick, this.tickTime, this._target.x, this.speed);
 			} else if (Math.round(this.position.x) != this._target.x) {
 				mainWindow.setPosition(this._target.x, Math.round(this.position.y));
@@ -191,6 +197,7 @@ function createWindow () {
 			if (this.position.y - this.speed < this._target.y) {
 				this.position.y += this.speed;
 				if (Math.round(this.position.x) && Math.round(this.position.y)) mainWindow.setPosition(Math.round(this.position.x), Math.round(this.position.y));
+				if (this.moveMouse) robot.moveMouse(this.position.x + mainWindow.getSize()[0] / 2, this.position.y + mainWindow.getSize()[1] / 2);
 				moveDownTick.id = setTimeout(moveDownTick, this.tickTime, this._target.y, this.speed);
 			} else if (Math.round(this.position.y) != this._target.y) {
 				mainWindow.setPosition(Math.round(this.position.x), this._target.y);
@@ -205,6 +212,7 @@ function createWindow () {
 			if (this.position.y - this.speed > this._target.y) {
 				this.position.y -= this.speed;
 				if (Math.round(this.position.x) && Math.round(this.position.y)) mainWindow.setPosition(Math.round(this.position.x), Math.round(this.position.y));
+				if (this.moveMouse) robot.moveMouse(this.position.x + mainWindow.getSize()[0] / 2, this.position.y + mainWindow.getSize()[1] / 2);
 				moveUpTick.id = setTimeout(moveUpTick, this.tickTime, this._target.y, this.speed);
 			} else if (Math.round(this.position.y) != this._target.y) {
 				mainWindow.setPosition(Math.round(this.position.x), this._target.y);
@@ -226,6 +234,11 @@ function createWindow () {
 		mainWindow.move.speed = speed;
 	});
 
+	ipcMain.on('set-window-move-mouse', (event, moveMouse) => {
+		console.log(moveMouse)
+		mainWindow.move.moveMouse = moveMouse;
+	});
+
 	ipcMain.on('window-move-pause', event => {
 		mainWindow.move.pause();
 		mainWindow.webContents.send('window-move-pause');
@@ -237,7 +250,8 @@ function createWindow () {
 	});
 
 	ipcMain.on('window-move-start', (event, target, speed) => {
-		mainWindow.move = WindowMove(target, speed);
+		mainWindow.move.target = target;
+		mainWindow.move.speed = speed;
 		initializeMove();
 	});
 

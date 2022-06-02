@@ -34,14 +34,16 @@ function stopAnimation () {
 	character.currentAnimation = {animation: null, id: null};
 }
 
-// function startMove (pos, speed) {
-// 	pos = {x: pos.x - 32, y: pos.y - 50};
-// 	return new Promise ((resolve, reject) => {
-// 		ipcRenderer.send('window-move-start', pos, speed);
-
-		
-// 	});
-// }
+function startMove (pos, speed) {
+	pos = {x: pos.x - 32, y: pos.y - 50};
+	return new Promise ((resolve, reject) => {
+		ipcRenderer.send('window-move-start', pos, speed);
+		ipcRenderer.on('window-move-end', () => {
+			playAnimation(character.animations.idle_anim);
+			resolve();
+		});
+	});
+}
 
 function getMousePosition () {
 	return new Promise ((resolve, reject) => {
@@ -58,21 +60,19 @@ ipcRenderer.on('window-mouse-down', (event, mouse_event) => {
 	ipcRenderer.send('window-move-pause');
 });
 
-ipcRenderer.on('global-mouse-move', (event, mouse_event) => {
-	ipcRenderer.send('set-window-move-target', {x: mouse_event.x - 32, y: mouse_event.y - 50});
-});
-
 ipcRenderer.on('global-mouse-up', (event, mouse_event) => {
 	if (mouse_event.button !== 1) return;
 	ipcRenderer.send('window-move-resume');
 });
 
-// ipcRenderer.on('idle-timeout', () => {
-// 	getMousePosition().then(position => {
-// 		startMove(position, character.speed);
-// 		ipcRenderer.send('set-mouse-position', {x: 10, y: 10});
-// 	});
-// });
+ipcRenderer.on('mouse-inactive', () => {
+	getMousePosition().then(position => {
+		startMove(position, character.speed).then(() => {
+			ipcRenderer.send('set-window-move-mouse', true);
+			setTimeout(() => startMove({x: 1000, y: 500}, character.speed), 1000);
+		});
+	});
+});
 
 ipcRenderer.on('window-move-start', () => {
 	playAnimation(character.animations.run_anim);
@@ -86,9 +86,4 @@ ipcRenderer.on('window-move-pause', () => {
 	playAnimation(character.animations.idle_anim);
 });
 
-ipcRenderer.on('window-move-end', () => {
-	playAnimation(character.animations.idle_anim);
-	resolve();
-});
-
-getMousePosition().then(position => ipcRenderer.send('window-move-start', {x: position.x - 32, y: position.y - 50}, character.speed))
+playAnimation(character.animations.idle_anim);
