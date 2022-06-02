@@ -2,8 +2,8 @@ const { ipcRenderer } = require('electron');
 const character_image = document.querySelector('img.character-img');
 
 let character = {
-	speed: 0.2,
-	currentAnimation: null,
+	speed: 2,
+	currentAnimation: {animation: null, id: null},
 	moveTarget: {x: null, y: null},
 
 	animations: {
@@ -20,54 +20,75 @@ let character = {
 }
 
 
-function playAnimation (animation) {
+function playAnimation (animation, isNew=true) {
+	if (character.currentAnimation.animation == animation && isNew) return;
+	stopAnimation();
 	playAnimation.currentFrame = playAnimation.currentFrame ?? 0;
 	character_image.src = animation.frames[playAnimation.currentFrame];
 	playAnimation.currentFrame != animation.frames.length - 1 ? playAnimation.currentFrame++ : playAnimation.currentFrame = 0;
-	character.currentAnimation = setTimeout(playAnimation, animation.timeout, animation);
+	character.currentAnimation = {animation, id: setTimeout(playAnimation, animation.timeout, animation, false)};
 }
 
 function stopAnimation () {
-	clearTimeout(character.currentAnimation);
-	character.currentAnimation = null;
+	clearTimeout(character.currentAnimation.id);
+	character.currentAnimation = {animation: null, id: null};
 }
 
+// function startMove (pos, speed) {
+// 	pos = {x: pos.x - 32, y: pos.y - 50};
+// 	return new Promise ((resolve, reject) => {
+// 		ipcRenderer.send('window-move-start', pos, speed);
 
-function startMove (pos, speed) {
+		
+// 	});
+// }
+
+function getMousePosition () {
 	return new Promise ((resolve, reject) => {
-		character.moveTarget = pos;
-
-		stopAnimation();
-		playAnimation(character.animations.run_anim);
-		ipcRenderer.send('window-move-start', pos, speed);
-
-		ipcRenderer.on('window-move-end', (event) => {
-			character.moveTarget = {x: null, y: null};
-
-			stopAnimation();
-			playAnimation(character.animations.idle_anim);
-			resolve();
-		});
+		ipcRenderer.send('get-mouse-position');
+		ipcRenderer.on('response-mouse-position', (event, position) => resolve(position));
 	});
 }
-
-function stopMove () { ipcRenderer.send('window-move-force-end'); }
-
 
 ipcRenderer.on('character-flip-left', () => { character_image.style.webkitTransform = 'scaleX(-1)'; character_image.style.transform = 'scaleX(-1)'; });
 ipcRenderer.on('character-flip-right', () => { character_image.style.webkitTransform = ''; character_image.style.transform = ''; });
 
-
-ipcRenderer.on('window-mouse-down', (event) => {
-	if (event.button) return;
-	stopMove();
+ipcRenderer.on('window-mouse-down', (event, mouse_event) => {
+	if (mouse_event.button !== 1) return;
+	ipcRenderer.send('window-move-pause');
 });
 
-ipcRenderer.on('window-mouse-up', (event) => {
-	if (event.button) return;
-	ipcRenderer.send('window-move-force-start')
-	if (character.moveTarget.x !== null && character.moveTarget.y !== null) startMove(character.moveTarget, character.speed);
+ipcRenderer.on('global-mouse-move', (event, mouse_event) => {
+	ipcRenderer.send('set-window-move-target', {x: mouse_event.x - 32, y: mouse_event.y - 50});
 });
 
-playAnimation(character.animations.idle_anim);
-setTimeout(() => startMove({x: 600, y: 540}, character.speed));
+ipcRenderer.on('global-mouse-up', (event, mouse_event) => {
+	if (mouse_event.button !== 1) return;
+	ipcRenderer.send('window-move-resume');
+});
+
+// ipcRenderer.on('idle-timeout', () => {
+// 	getMousePosition().then(position => {
+// 		startMove(position, character.speed);
+// 		ipcRenderer.send('set-mouse-position', {x: 10, y: 10});
+// 	});
+// });
+
+ipcRenderer.on('window-move-start', () => {
+	playAnimation(character.animations.run_anim);
+});
+
+ipcRenderer.on('window-move-resume', () => {
+	playAnimation(character.animations.run_anim);
+});
+
+ipcRenderer.on('window-move-pause', () => {
+	playAnimation(character.animations.idle_anim);
+});
+
+ipcRenderer.on('window-move-end', () => {
+	playAnimation(character.animations.idle_anim);
+	resolve();
+});
+
+getMousePosition().then(position => ipcRenderer.send('window-move-start', {x: position.x - 32, y: position.y - 50}, character.speed))
