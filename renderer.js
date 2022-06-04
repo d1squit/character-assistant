@@ -1,4 +1,3 @@
-const { ipcRenderer } = require('electron');
 const character_image = document.querySelector('img.character-img');
 
 let character = {
@@ -19,7 +18,6 @@ let character = {
 	}
 }
 
-
 function playAnimation (animation, isNew=true) {
 	if (character.currentAnimation.animation == animation && isNew) return;
 	stopAnimation();
@@ -34,56 +32,84 @@ function stopAnimation () {
 	character.currentAnimation = {animation: null, id: null};
 }
 
-function startMove (pos, speed) {
-	pos = {x: pos.x - 32, y: pos.y - 50};
-	return new Promise ((resolve, reject) => {
-		ipcRenderer.send('window-move-start', pos, speed);
-		ipcRenderer.on('window-move-end', () => {
-			playAnimation(character.animations.idle_anim);
-			resolve();
-		});
-	});
-}
-
-function getMousePosition () {
-	return new Promise ((resolve, reject) => {
-		ipcRenderer.send('get-mouse-position');
-		ipcRenderer.on('response-mouse-position', (event, position) => resolve(position));
-	});
-}
-
-ipcRenderer.on('character-flip-left', () => { character_image.style.webkitTransform = 'scaleX(-1)'; character_image.style.transform = 'scaleX(-1)'; });
-ipcRenderer.on('character-flip-right', () => { character_image.style.webkitTransform = ''; character_image.style.transform = ''; });
-
-ipcRenderer.on('window-mouse-down', (event, mouse_event) => {
-	if (mouse_event.button !== 1) return;
-	ipcRenderer.send('window-move-pause');
-});
-
-ipcRenderer.on('global-mouse-up', (event, mouse_event) => {
-	if (mouse_event.button !== 1) return;
-	ipcRenderer.send('window-move-resume');
-});
-
-ipcRenderer.on('mouse-inactive', () => {
-	getMousePosition().then(position => {
-		startMove(position, character.speed).then(() => {
-			ipcRenderer.send('set-window-move-mouse', true);
-			setTimeout(() => startMove({x: 1000, y: 500}, character.speed), 1000);
-		});
-	});
-});
-
 ipcRenderer.on('window-move-start', () => {
-	playAnimation(character.animations.run_anim);
-});
-
-ipcRenderer.on('window-move-resume', () => {
 	playAnimation(character.animations.run_anim);
 });
 
 ipcRenderer.on('window-move-pause', () => {
 	playAnimation(character.animations.idle_anim);
 });
+
+ipcRenderer.on('character-flip-left', () => { character_image.style.webkitTransform = 'scaleX(-1)'; character_image.style.transform = 'scaleX(-1)'; });
+ipcRenderer.on('character-flip-right', () => { character_image.style.webkitTransform = ''; character_image.style.transform = ''; });
+
+// --------------------------------------------------------------------------------------------------------------------------------------- //
+
+
+function cancelMove (event) {
+	return new Promise ((resolve, reject) => {
+		ipcRenderer.on(event, () => resolve());
+	});
+}
+
+function startMove (pos, speed, cancelListener=null) {
+	return new Promise ((resolve, reject) => {
+		ipcRenderer.move.start(pos, speed);
+
+		let handler = (event) => {
+			playAnimation(character.animations.idle_anim);
+			ipcRenderer.off('window-move-end', handler);
+			resolve('window-move-end');
+		}
+
+		ipcRenderer.on('window-move-end', handler);
+
+		if (cancelListener) cancelListener().then(() => {
+			playAnimation(character.animations.idle_anim);
+			ipcRenderer.move.stop();
+			reject('window-move-cancel');
+		});
+	});
+}
+
+
+
+
+
+ipcRenderer.on('window-mouse-down', (event, mouse_event) => {
+	if (mouse_event.button !== 1) return;
+	ipcRenderer.move.pause();
+
+	document.body.style.setProperty('-webkit-app-region', 'drag');
+});
+
+ipcRenderer.on('global-mouse-move', (event, mouse_event) => {
+	
+});
+
+ipcRenderer.on('global-mouse-up', (event, mouse_event) => {
+	if (mouse_event.button !== 1) return;
+	ipcRenderer.move.resume();
+
+	document.body.style.setProperty('-webkit-app-region', 'no-drag');
+});
+
+
+
+
+
+ipcRenderer.on('mouse-inactive-start', () => {
+	ipcRenderer.mouse.get.position().then(position => {
+		startMove(position, character.speed, () => cancelMove('mouse-inactive-end')).then(() => {
+			ipcRenderer.move.set.pinMouse(true);
+			startMove({x: 1800, y: 1060}, character.speed, () => cancelMove('mouse-inactive-end')).then(() => {
+				ipcRenderer.move.set.pinMouse(false);
+				ipcRenderer.send('mouse-click', 'left');
+				ipcRenderer.log(1)
+			}, () => ipcRenderer.move.set.pinMouse(false));
+		});
+	});
+});
+
 
 playAnimation(character.animations.idle_anim);
