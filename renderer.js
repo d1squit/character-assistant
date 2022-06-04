@@ -52,17 +52,18 @@ function cancelMove (event) {
 	});
 }
 
+let handler = (event) => {
+	playAnimation(character.animations.idle_anim);
+	resolve('window-move-end');
+}
+
+ipcRenderer.on('window-move-end', handler);
+
 function startMove (pos, speed, cancelListener=null) {
 	return new Promise ((resolve, reject) => {
 		ipcRenderer.move.start(pos, speed);
 
-		let handler = (event) => {
-			playAnimation(character.animations.idle_anim);
-			ipcRenderer.off('window-move-end', handler);
-			resolve('window-move-end');
-		}
-
-		ipcRenderer.on('window-move-end', handler);
+		
 
 		if (cancelListener) cancelListener().then(() => {
 			playAnimation(character.animations.idle_anim);
@@ -84,7 +85,8 @@ ipcRenderer.on('window-mouse-down', (event, mouse_event) => {
 });
 
 ipcRenderer.on('global-mouse-move', (event, mouse_event) => {
-	
+	if (mouse_event.deltaPosition.x > 1 || mouse_event.deltaPosition.y > 1)
+		startMove(mouse_event.currentPosition, character.speed);
 });
 
 ipcRenderer.on('global-mouse-up', (event, mouse_event) => {
@@ -98,18 +100,18 @@ ipcRenderer.on('global-mouse-up', (event, mouse_event) => {
 
 
 
-ipcRenderer.on('mouse-inactive-start', () => {
-	ipcRenderer.mouse.get.position().then(position => {
-		startMove(position, character.speed, () => cancelMove('mouse-inactive-end')).then(() => {
-			ipcRenderer.move.set.pinMouse(true);
-			startMove({x: 1800, y: 1060}, character.speed, () => cancelMove('mouse-inactive-end')).then(() => {
-				ipcRenderer.move.set.pinMouse(false);
-				ipcRenderer.send('mouse-click', 'left');
-				ipcRenderer.log(1)
-			}, () => ipcRenderer.move.set.pinMouse(false));
-		});
-	});
-});
+// ipcRenderer.on('mouse-inactive-start', () => {
+// 	ipcRenderer.mouse.get.position().then(position => {
+// 		startMove(position, character.speed, () => cancelMove('mouse-inactive-end')).then(() => {
+// 			ipcRenderer.move.set.pinMouse(true);
+// 			startMove({x: 1800, y: 1060}, character.speed, () => cancelMove('mouse-inactive-end')).then(() => {
+// 				ipcRenderer.move.set.pinMouse(false);
+// 				ipcRenderer.send('mouse-click', 'left');
+// 				ipcRenderer.log(1)
+// 			}, () => ipcRenderer.move.set.pinMouse(false));
+// 		});
+// 	});
+// });
 
 
 playAnimation(character.animations.idle_anim);
