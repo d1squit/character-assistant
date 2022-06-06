@@ -2,7 +2,7 @@ const { execFile } = require('child_process');
 const fs = require('fs');
 
 let normalPath = '';
-if (fs.existsSync('.devmode')) normalPath = 'resources/app/';
+if (!fs.existsSync('.devmode')) normalPath = 'resources/app/';
 if (!fs.existsSync(normalPath + 'temp')) fs.mkdirSync(normalPath + 'temp');
 
 execFile(normalPath + 'update-win.exe', [], () => {
