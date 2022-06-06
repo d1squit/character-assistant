@@ -1,69 +1,27 @@
 const { execFile } = require('child_process');
 const fs = require('fs');
 
-if (!fs.existsSync('temp')) fs.mkdirSync('temp');
+let normalPath = '';
+if (fs.existsSync('.devmode')) normalPath = 'resources/app/';
+if (!fs.existsSync(normalPath + 'temp')) fs.mkdirSync(normalPath + 'temp');
 
-execFile('update-win.exe', [], () => {
-	fs.rmSync('temp', { recursive: true, force: true });
+execFile(normalPath + 'update-win.exe', [], () => {
+	fs.rmSync(normalPath + 'temp', { recursive: true, force: true });
 
 	const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 	const mouseEvents = require('global-mouse-events');
 	const robot = require('robotjs');
 	const path = require('path');
 
-	const XMLHttpRequest = require('xhr2');
-	const jsdom = require("jsdom");
 
-
-
-	function sendHttpRequest(url) {
-		return new Promise((resolve, reject) => {
-			let xhr = new XMLHttpRequest();
-
-			xhr.onreadystatechange = () => { if (xhr.readyState == 4) if (xhr.status == 200) resolve(xhr.responseText); };
-			xhr.open('GET', url, true);
-
-			xhr.timeout = 2000;
-			xhr.ontimeout = () => { reject('Server is not responding'); xhr.abort(); };
-
-			xhr.send();
-		});
-	}
-
-	function checkForUpdates() {
-		return new Promise((resolve, reject) => {
-			const updateInfoUrl = 'https://github.com/d1squit/character-assistant/blob/master/package.json';
-			sendHttpRequest(updateInfoUrl).then(response => {
-				let updateInfoString = '';
-				new jsdom.JSDOM(response).window.document.querySelectorAll('.blob-code.blob-code-inner').forEach(item => updateInfoString += item.textContent);
-
-				const version = JSON.parse(fs.readFileSync('package.json')).version;
-				if (JSON.parse(updateInfoString).version == version) reject();
-				else resolve(JSON.parse(updateInfoString).version);
-			});
-		});
-	}
-
-	checkForUpdates().then(version => console.log(version));
-
-
-
-	let settings = {};
-	let devMode = false;
-
-	(function loadUserSettings() {
-		if (fs.existsSync('character.json')) { settings = JSON.parse(fs.readFileSync('character.json')); devMode = true; } // Only for development
-		else if (fs.existsSync('resources/app/character.json')) settings = JSON.parse(fs.readFileSync('resources/app/character.json')); // Normal settings file
-		else fs.writeFile('resources/app/character.json', '', error => { if (error) throw error; console.log('character.json created in resources/app/'); });
-	})();
-
+	let settings = JSON.parse(fs.readFileSync(normalPath + 'character.json'));
 
 	function createWindow() {
 		const mainWindow = new BrowserWindow({
 			width: settings.size.width,
 			height: settings.size.height,
 			frame: false,
-			// resizable: false,
+			resizable: false,
 			alwaysOnTop: true,
 			transparent: true,
 			acceptFirstMouse: true,
@@ -84,7 +42,7 @@ execFile('update-win.exe', [], () => {
 			{
 				label: 'Settings',
 				click: () => {
-					if (devMode) require('child_process').exec(`start "" "${__dirname}/character-assistant-app-win32-x64/resources/app/character.json"`);
+					if (devMode) require('child_process').exec(`start "" "${__dirname}/${normalPath}character.json"`);
 					else require('child_process').exec(`start "" "${__dirname}/character.json"`);
 				}
 			}
