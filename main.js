@@ -4,7 +4,7 @@ const fs = require('fs');
 if (!fs.existsSync('temp')) fs.mkdirSync('temp');
 
 execFile('update-win.exe', [], () => {
-	fs.rmSync('temp');
+	fs.rmSync('temp', { recursive: true, force: true });
 
 	const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 	const mouseEvents = require('global-mouse-events');
@@ -13,7 +13,6 @@ execFile('update-win.exe', [], () => {
 
 	const XMLHttpRequest = require('xhr2');
 	const jsdom = require("jsdom");
-	const fs = require('fs');
 
 
 
