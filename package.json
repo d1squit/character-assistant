@@ -1,6 +1,6 @@
 {
 	"name": "character-assistant-app",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"description": "Adds a customizable character to your screen",
 	"main": "main.js",
 	"type": "commonjs",
@@ -15,7 +15,7 @@
 		"customizable"
 	],
 	"author": "d1quit",
-	"license": "CC0-1.0",
+	"license": "GNU GPLv3 License",
 	"devDependencies": {
 		"electron": "^19.0.0",
 		"electron-packager": "^15.5.1"

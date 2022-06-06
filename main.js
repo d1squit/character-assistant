@@ -1,6 +1,11 @@
 const { execFile } = require('child_process');
+const fs = require('fs');
+
+if (!fs.existsSync('temp')) fs.mkdirSync('temp');
 
 execFile('update-win.exe', [], () => {
+	fs.rmSync('temp');
+
 	const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 	const mouseEvents = require('global-mouse-events');
 	const robot = require('robotjs');
