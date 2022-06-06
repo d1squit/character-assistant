@@ -12,7 +12,6 @@
 
 body {
 	overflow: hidden;
-	height: 100px;
 
 	display: flex;
 	justify-content: center;
@@ -22,8 +21,6 @@ body {
 }
 
 .character-container {
-	width: 64px;
-	height: 100px;
 	overflow: hidden;
 
 	display: flex;
@@ -33,9 +30,10 @@ body {
 }
 
 .character-img {
+	-webkit-app-region: drag;
 	image-rendering: pixelated;
-	width: 64px;
-	margin-top: -31px;
+
+	margin-top: 0px;
 }
 
 .character-name {

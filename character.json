@@ -1,0 +1,15 @@
+{
+	"size": { "width": 64, "height": 100 },
+	"speed": 3,
+	"animations": {
+		"idle_animation": {
+			"timeout": 150,
+			"frames": ["tiles/knight_f_idle_anim_f0.png", "tiles/knight_f_idle_anim_f1.png", "tiles/knight_f_idle_anim_f2.png", "tiles/knight_f_idle_anim_f3.png"]
+		},
+		
+		"run_animation": {
+			"timeout": 150,
+			"frames": ["tiles/knight_f_run_anim_f0.png", "tiles/knight_f_run_anim_f1.png", "tiles/knight_f_run_anim_f2.png", "tiles/knight_f_run_anim_f3.png"]
+		}
+	}
+}

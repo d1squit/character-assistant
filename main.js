@@ -1,14 +1,60 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const mouseEvents = require('global-mouse-events');
 const robot = require('robotjs');
 const path = require('path');
 
+const XMLHttpRequest = require('xhr2');
+const jsdom = require("jsdom");
+const fs = require('fs');
+
+
+
+function sendHttpRequest (url) {
+	return new Promise ((resolve, reject) => {
+		let xhr = new XMLHttpRequest();
+
+		xhr.onreadystatechange = () => { if (xhr.readyState == 4) if (xhr.status == 200) resolve(xhr.responseText); };
+		xhr.open('GET', url, true);
+	
+		xhr.timeout = 2000;
+		xhr.ontimeout = () => { reject('Server is not responding'); xhr.abort(); };
+		
+		xhr.send();
+	});
+}
+
+function checkForUpdates () {
+	return new Promise((resolve, reject) => {
+		const updateInfoUrl = 'https://github.com/d1squit/character-assistant/blob/master/package.json';
+		sendHttpRequest(updateInfoUrl).then(response => {
+			let updateInfoString = '';
+			new jsdom.JSDOM(response).window.document.querySelectorAll('.blob-code.blob-code-inner').forEach(item => updateInfoString += item.textContent);
+			
+			const version = JSON.parse(fs.readFileSync('package.json')).version;
+			if (JSON.parse(updateInfoString).version == version) reject();
+			else resolve(JSON.parse(updateInfoString).version);
+		});
+	});
+}
+
+checkForUpdates().then(version => console.log(version));
+
+
+
+let settings = {};
+let devMode = false;
+
+(function loadUserSettings () {
+	if (fs.existsSync('character.json')) { settings = JSON.parse(fs.readFileSync('character.json')); devMode = true; } // Only for development
+	else if (fs.existsSync('resources/app/character.json')) settings = JSON.parse(fs.readFileSync('resources/app/character.json')); // Normal settings file
+	else fs.writeFile('resources/app/character.json', '', error => { if (error) throw error; console.log('character.json created in resources/app/'); });
+})();
+
+
 function createWindow () {
 	const mainWindow = new BrowserWindow({
-		width: 64,
-		height: 100,
-		x: 960,
-		y: 540,
+		width: settings.size.width,
+		height: settings.size.height,
 		frame: false,
 		// resizable: false,
 		alwaysOnTop: true,
@@ -23,9 +69,23 @@ function createWindow () {
 		}
 	});
 
+	const menu = Menu.buildFromTemplate([
+		{
+			label: 'Close',
+			role: 'quit'
+		},
+		{
+			label: 'Settings',
+			click: () => {
+				if (devMode) require('child_process').exec(`start "" "${__dirname}/character-assistant-app-win32-x64/resources/app/character.json"`);
+				else require('child_process').exec(`start "" "${__dirname}/character.json"`);
+			}
+		}
+	]);
+
 	mainWindow.setAlwaysOnTop(true, "floating");
 	mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-	mainWindow.hookWindowMessage(0x0116, () => { mainWindow.setEnabled(false); mainWindow.setEnabled(true); });
+	mainWindow.hookWindowMessage(0x0116, () => { mainWindow.setEnabled(false); mainWindow.setEnabled(true); menu.popup(); });
 
 	// Idle Timer
 
@@ -51,8 +111,8 @@ function createWindow () {
 	mouseEvents.lastPosition = robot.getMousePos();
 
 	mouseEvents.on('mousedown', event => {
+		if (idleTimer.timer >= minTimer) mainWindow.webContents.send('mouse-inactive-end', event);
 		if (idleTimer.timer !== 0) idleTimer.timer = 0;
-		else if (idleTimer.timer >= minTimer) mainWindow.webContents.send('mouse-inactive-end', event);
 
 		if (isInWindow(robot.getMousePos())) mainWindow.webContents.send('window-mouse-down', event);
 		mainWindow.webContents.send('global-mouse-down', event);
@@ -67,8 +127,8 @@ function createWindow () {
 			return;
 		}
 
+		if (idleTimer.timer >= minTimer) mainWindow.webContents.send('mouse-inactive-end', event);
 		if (idleTimer.timer !== 0) idleTimer.timer = 0;
-		else if (idleTimer.timer >= minTimer) mainWindow.webContents.send('mouse-inactive-end', event);
 
 		let sendEvent = {
 			currentPosition: { x: event.x, y: event.y },
@@ -84,8 +144,8 @@ function createWindow () {
 	});
 
 	mouseEvents.on('mouseup', event => {
+		if (idleTimer.timer >= minTimer) mainWindow.webContents.send('mouse-inactive-end', event);
 		if (idleTimer.timer !== 0) idleTimer.timer = 0;
-		else if (idleTimer.timer >= minTimer) mainWindow.webContents.send('mouse-inactive-end', event);
 
 		if (isInWindow(robot.getMousePos())) mainWindow.webContents.send('window-mouse-up', event);
 		mainWindow.webContents.send('global-mouse-up', event);
@@ -108,10 +168,15 @@ function createWindow () {
 	function WindowMove (target={x: null, y: null}, speed=0, pinMouse=false) {
 		this.initializeMove = () => {
 			if (Math.abs(Date.now() - this.lastInit) < this.tickTime) return;
-			this.position = {x: mainWindow.getPosition()[0], y: mainWindow.getPosition()[1]};
-
+			this.position = { x: mainWindow.getPosition()[0], y: mainWindow.getPosition()[1] };
+			
 			if (!this._target.x && !this._target.y) return;
 			if (this.position.x == this._target.x && this.position.y == this._target.y) { mainWindow.webContents.send('window-move-end'); return; }
+
+			this.distance = { x: Math.abs(this.position.x - this._target.x), y: Math.abs(this.position.y - this._target.y) };
+
+			if (this.distance.x > this.distance.y) this.axisSpeed = { x: this.speed, y: this.speed * this.distance.y / this.distance.x };
+			else this.axisSpeed = { x: this.speed * this.distance.x / this.distance.y, y: this.speed };
 
 			mainWindow.webContents.send('window-move-start');
 			this.moveTick.complete = { x: false, y: false };
@@ -170,15 +235,14 @@ function createWindow () {
 		this.moveTick = () => {
 			if (!this.accessMove) return;
 
-			if (this.position.x + this.speed < this._target.x) this.position.x += this.speed;
-			else if (this.position.x - speed > this._target.x) this.position.x -= this.speed;
-			else if (Math.round(this.position.x) != this._target.x) this.position.x = this._target.x;
+			if (this.position.x + this.axisSpeed.x < this._target.x) this.position.x += this.axisSpeed.x;
+			else if (this.position.x - this.axisSpeed.x > this._target.x) this.position.x -= this.axisSpeed.x;
+			else if (Math.round(this.position.x) != Math.round(this._target.x)) this.position.x = this._target.x;
 			else this.moveTick.complete.x = true;
 
-
-			if (this.position.y + this.speed < this._target.y) this.position.y += this.speed;
-			else if (this.position.y - this.speed > this._target.y) this.position.y -= this.speed;
-			else if (Math.round(this.position.y) != this._target.y) this.position.y = this._target.y;
+			if (this.position.y + this.axisSpeed.y < this._target.y) this.position.y += this.axisSpeed.y;
+			else if (this.position.y - this.axisSpeed.y > this._target.y) this.position.y -= this.axisSpeed.y;
+			else if (Math.round(this.position.y) != Math.round(this._target.y)) this.position.y = this._target.y;
 			else this.moveTick.complete.y = true;
 
 			if (Math.round(this.position.x) && Math.round(this.position.y)) mainWindow.setPosition(Math.round(this.position.x), Math.round(this.position.y));
@@ -216,6 +280,8 @@ function createWindow () {
 	ipcMain.on('window-move-end', event => mainWindow.move.stop());
 
 	ipcMain.on('window-move-start', (event, target, speed) => {
+		if (!target.x && !target.y) return;
+
 		mainWindow.move.accessMove = true;
 		mainWindow.move.speed = speed;
 		mainWindow.move.target = {x: target.x - mainWindow.getSize()[0] / 2, y: target.y - mainWindow.getSize()[1] / 2};

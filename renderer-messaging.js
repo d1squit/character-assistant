@@ -5,14 +5,14 @@ ipcRenderer.log = (...args) => ipcRenderer.send('log', args);
 ipcRenderer.move = {
 	pause: () => ipcRenderer.send('window-move-pause'),
 	resume: () => ipcRenderer.send('window-move-resume'),
-    start: (target, speed) => ipcRenderer.send('window-move-start', target, speed),
+    start: (target={x: null, y: null}, speed=null) => ipcRenderer.send('window-move-start', target, speed),
     stop: () => ipcRenderer.send('window-move-end'),
 
 	get: {
 		target: () => {
 			return new Promise ((resolve, reject) => {
 				let handler = (event, target) => {
-					ipcRenderer.off('response-window-move-target', handler);
+					ipcRenderer.removeAllListeners('response-window-move-target');
 					resolve(target);
 				};
 
@@ -24,7 +24,7 @@ ipcRenderer.move = {
 		speed: () => {
 			return new Promise ((resolve, reject) => {
 				let handler = (event, speed) => {
-					ipcRenderer.off('response-window-move-speed', handler);
+					ipcRenderer.removeAllListeners('response-window-move-speed');
 					resolve(speed);
 				};
 
@@ -36,7 +36,7 @@ ipcRenderer.move = {
 		pinMouse: () => {
 			return new Promise ((resolve, reject) => {
 				let handler = (event, pinMouse) => {
-					ipcRenderer.off('response-window-move-pinmouse', handler);
+					ipcRenderer.removeAllListeners('response-window-move-pinmouse');
 					resolve(pinMouse);
 				};
 
@@ -60,7 +60,7 @@ ipcRenderer.mouse = {
 		position: () => {
 			return new Promise ((resolve, reject) => {
 				let handler = (event, position) => {
-					ipcRenderer.off('response-mouse-position', handler);
+					ipcRenderer.removeAllListeners('response-mouse-position');
 					resolve(position);
 				};
 				
