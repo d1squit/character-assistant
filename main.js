@@ -1,8 +1,13 @@
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const mouseEvents = require('global-mouse-events');
+const robot = require('robotjs');
+
 const childProcess = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const XMLHttpRequest = require('xhr2');
 const jsdom = require('jsdom');
+
 
 let needsReload = false;
 let normalPath = '';
@@ -32,11 +37,17 @@ function checkForUpdates() {
 
 			const version = JSON.parse(fs.readFileSync(normalPath + 'package.json')).version;
 			if (JSON.parse(updateInfoString).version != version) resolve(JSON.parse(updateInfoString).version);
+			else resolve(null);
 		});
 	});
 }
 
-checkForUpdates().then(version => { console.log('Loading update: v' + version); needsReload = true });
+checkForUpdates().then(version => {
+	if (version) {
+		console.log('Loading update: v' + version);
+		needsReload = true;
+	} else console.log('There is no updates');
+});
 
 childProcess.exec(`cd ${normalPath} & update-win.exe`, error => {
 	if (error) throw error;
@@ -44,13 +55,11 @@ childProcess.exec(`cd ${normalPath} & update-win.exe`, error => {
 	if (normalPath && fs.existsSync('resources/app/temp')) fs.rmdirSync(normalPath + 'temp');
 
 	if (needsReload) {
-		try { require('electron-reloader')(module); }
-		catch { }
-	}
+		if (normalPath) childProcess.exec('character-assistant-app.exe');
+		else childProcess.exec('npm start');
 
-	const { app, BrowserWindow, ipcMain, Menu } = require('electron');
-	const mouseEvents = require('global-mouse-events');
-	const robot = require('robotjs');
+		app.exit();
+	}
 
 	let settings = JSON.parse(fs.readFileSync(normalPath + 'character.json'));
 
