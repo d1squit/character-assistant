@@ -1,12 +1,28 @@
 const childProcess = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const XMLHttpRequest = require('xhr2');
+const jsdom = require('jsdom');
 
 let needsReload = false;
 let normalPath = '';
 if (!fs.existsSync('resources/app/.devmode'))
 	if (!fs.existsSync('.devmode'))
 		normalPath = 'resources/app/';
+
+function sendHttpRequest(url) {
+	return new Promise((resolve, reject) => {
+		let xhr = new XMLHttpRequest();
+
+		xhr.onreadystatechange = () => { if (xhr.readyState == 4) if (xhr.status == 200) resolve(xhr.responseText); };
+		xhr.open('GET', url, true);
+
+		xhr.timeout = 2000;
+		xhr.ontimeout = () => { reject('Server is not responding'); xhr.abort(); };
+
+		xhr.send();
+	});
+}
 
 function checkForUpdates() {
 	return new Promise((resolve, reject) => {
@@ -15,13 +31,12 @@ function checkForUpdates() {
 			new jsdom.JSDOM(response).window.document.querySelectorAll('.blob-code.blob-code-inner').forEach(item => updateInfoString += item.textContent);
 
 			const version = JSON.parse(fs.readFileSync(normalPath + 'package.json')).version;
-			if (JSON.parse(updateInfoString).version != version) resolve(JSON.parse(updateInfoString).version)
-			else reject();
+			if (JSON.parse(updateInfoString).version != version) resolve(JSON.parse(updateInfoString).version);
 		});
 	});
 }
 
-checkForUpdates().then(version => console.log('Loading update: v' + version), () => needsReload = true);
+checkForUpdates().then(version => { console.log('Loading update: v' + version); needsReload = true });
 
 childProcess.exec(`cd ${normalPath} & update-win.exe`, error => {
 	if (error) throw error;
@@ -30,7 +45,7 @@ childProcess.exec(`cd ${normalPath} & update-win.exe`, error => {
 
 	if (needsReload) {
 		try { require('electron-reloader')(module); }
-		catch {}
+		catch { }
 	}
 
 	const { app, BrowserWindow, ipcMain, Menu } = require('electron');
