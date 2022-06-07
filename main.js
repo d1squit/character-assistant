@@ -7,7 +7,7 @@ if (!fs.existsSync('resources/app/.devmode'))
 	if (!fs.existsSync('.devmode'))
 		normalPath = 'resources/app/';
 
-childProcess.exec(`cd ${normalPath} & update-win.exe`, (error) => {
+childProcess.exec(`cd ${normalPath} & update-win.exe`, error => {
 	if (error) throw error;
 	if (normalPath && fs.existsSync('resources/app/.devmode')) fs.rmSync(normalPath + '.devmode');
 	if (normalPath && fs.existsSync('resources/app/temp')) fs.rmdirSync(normalPath + 'temp');
@@ -44,7 +44,7 @@ childProcess.exec(`cd ${normalPath} & update-win.exe`, (error) => {
 			{
 				label: 'Settings',
 				click: () => {
-					require('child_process').exec(`start "" "${__dirname}/${normalPath}character.json"`);
+					require('child_process').exec(`start "" "${__dirname}/character.json"`);
 				}
 			}
 		]);
