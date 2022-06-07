@@ -1,17 +1,17 @@
-const { execFile } = require('child_process');
+const childProcess = require('child_process');
 const fs = require('fs');
+const path = require('path');
 
 let normalPath = '';
-if (!fs.existsSync('.devmode')) normalPath = 'resources/app/';
-if (!fs.existsSync(normalPath + 'temp')) fs.mkdirSync(normalPath + 'temp');
+if (!fs.existsSync('resources/app/.devmode')) normalPath = 'resources/app/';
 
-execFile(normalPath + 'update-win.exe', [], () => {
-	fs.rmSync(normalPath + 'temp', { recursive: true, force: true });
+childProcess.exec(`cd ${normalPath} & update-win.exe`, (error) => {
+	if (error) throw error;
+	if (normalPath && fs.existsSync('resources/app/.devmode')) fs.rmSync(normalPath + '.devmode');
 
 	const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 	const mouseEvents = require('global-mouse-events');
 	const robot = require('robotjs');
-	const path = require('path');
 
 
 	let settings = JSON.parse(fs.readFileSync(normalPath + 'character.json'));
@@ -42,8 +42,7 @@ execFile(normalPath + 'update-win.exe', [], () => {
 			{
 				label: 'Settings',
 				click: () => {
-					if (devMode) require('child_process').exec(`start "" "${__dirname}/${normalPath}character.json"`);
-					else require('child_process').exec(`start "" "${__dirname}/character.json"`);
+					require('child_process').exec(`start "" "${__dirname}/${normalPath}character.json"`);
 				}
 			}
 		]);
