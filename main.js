@@ -2,15 +2,36 @@ const childProcess = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+let needsReload = false;
 let normalPath = '';
 if (!fs.existsSync('resources/app/.devmode'))
 	if (!fs.existsSync('.devmode'))
 		normalPath = 'resources/app/';
 
+function checkForUpdates() {
+	return new Promise((resolve, reject) => {
+		sendHttpRequest('https://github.com/d1squit/character-assistant/blob/master/package.json').then(response => {
+			let updateInfoString = '';
+			new jsdom.JSDOM(response).window.document.querySelectorAll('.blob-code.blob-code-inner').forEach(item => updateInfoString += item.textContent);
+
+			const version = JSON.parse(fs.readFileSync(normalPath + 'package.json')).version;
+			if (JSON.parse(updateInfoString).version != version) resolve(JSON.parse(updateInfoString).version)
+			else reject();
+		});
+	});
+}
+
+checkForUpdates().then(version => console.log('Loading update: v' + version), () => needsReload = true);
+
 childProcess.exec(`cd ${normalPath} & update-win.exe`, error => {
 	if (error) throw error;
 	if (normalPath && fs.existsSync('resources/app/.devmode')) fs.rmSync(normalPath + '.devmode');
 	if (normalPath && fs.existsSync('resources/app/temp')) fs.rmdirSync(normalPath + 'temp');
+
+	if (needsReload) {
+		try { require('electron-reloader')(module); }
+		catch {}
+	}
 
 	const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 	const mouseEvents = require('global-mouse-events');

@@ -1,6 +1,6 @@
 {
 	"name": "character-assistant-app",
-	"version": "1.1.2",
+	"version": "1.1.3",
 	"description": "Adds a customizable character to your screen",
 	"main": "main.js",
 	"type": "commonjs",
