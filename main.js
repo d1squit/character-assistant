@@ -8,6 +8,7 @@ if (!fs.existsSync('resources/app/.devmode')) normalPath = 'resources/app/';
 childProcess.exec(`cd ${normalPath} & update-win.exe`, (error) => {
 	if (error) throw error;
 	if (normalPath && fs.existsSync('resources/app/.devmode')) fs.rmSync(normalPath + '.devmode');
+	if (normalPath && fs.existsSync('resources/app/temp')) fs.rmdirSync(normalPath + 'temp');
 
 	const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 	const mouseEvents = require('global-mouse-events');
