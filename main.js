@@ -3,7 +3,9 @@ const fs = require('fs');
 const path = require('path');
 
 let normalPath = '';
-if (!fs.existsSync('resources/app/.devmode')) normalPath = 'resources/app/';
+if (!fs.existsSync('resources/app/.devmode'))
+	if (!fs.existsSync('.devmode'))
+		normalPath = 'resources/app/';
 
 childProcess.exec(`cd ${normalPath} & update-win.exe`, (error) => {
 	if (error) throw error;
@@ -13,7 +15,6 @@ childProcess.exec(`cd ${normalPath} & update-win.exe`, (error) => {
 	const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 	const mouseEvents = require('global-mouse-events');
 	const robot = require('robotjs');
-
 
 	let settings = JSON.parse(fs.readFileSync(normalPath + 'character.json'));
 
