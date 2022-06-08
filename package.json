@@ -1,32 +1,11 @@
 {
-	"name": "character-assistant-app",
-	"version": "1.2.0",
-	"description": "Adds a customizable character to your screen",
-	"main": "main.js",
-	"type": "commonjs",
-	"scripts": {
-		"start": "electron ."
-	},
-	"repository": "https://github.com/d1squit/character-assistant",
-	"keywords": [
-		"Electron",
-		"character",
-		"assistant",
-		"customizable"
-	],
-	"author": "d1quit",
-	"license": "GNU GPLv3 License",
-	"devDependencies": {
-		"electron": "^19.0.0",
-		"electron-packager": "^15.5.1"
-	},
-	"dependencies": {
-		"electron-fetch": "^1.7.4",
-		"electron-rebuild": "^3.2.7",
-		"global-mouse-events": "^1.0.7",
-		"jsdom": "^19.0.0",
-		"pkg": "^5.7.0",
-		"robotjs": "^0.6.0",
-		"xhr2": "^0.2.1"
-	}
+  "dependencies": {
+    "adm-zip": "^0.5.9",
+    "appdata-path": "^1.0.0",
+    "fs": "^0.0.1-security",
+    "jsdom": "^19.0.0",
+    "path": "^0.12.7",
+    "superagent": "^7.1.6",
+    "xhr2": "^0.2.1"
+  }
 }
