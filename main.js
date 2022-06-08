@@ -80,16 +80,11 @@ childProcess.exec(`cd ${normalPath} & update-win.exe`, error => {
 				contextIsolation: false
 			}
 		});
-
-		function quit () {
-			if (mainWindow.move.accessMove == false) app.exit();
-			else setTimeout(quit, 1000);
-		};
-
+		
 		const menu = Menu.buildFromTemplate([
 			{
 				label: 'Close',
-				click: () => quit()
+				click: () => app.exit()
 			},
 			{
 				label: 'Settings',
@@ -261,10 +256,10 @@ childProcess.exec(`cd ${normalPath} & update-win.exe`, error => {
 				else if (Math.round(this.position.y) != Math.round(this._target.y)) this.position.y = this._target.y;
 				else this.moveTick.complete.y = true;
 
-				if (Math.round(this.position.x) && Math.round(this.position.y)) mainWindow.setPosition(Math.round(this.position.x), Math.round(this.position.y));
+				try { if (Math.round(this.position.x) && Math.round(this.position.y)) mainWindow.setPosition(Math.round(this.position.x), Math.round(this.position.y)); } catch {}
 				if (this.pinMouse) robot.moveMouse(this.position.x + mainWindow.getSize()[0] / 2, this.position.y + mainWindow.getSize()[1] / 2);
 				if (this._target.x && this._target.y) this.moveTick.id = setTimeout(this.moveTick, this.tickTime);
-				if (this.moveTick.complete.x && this.moveTick.complete.y) mainWindow.webContents.send('window-move-end');
+				try { if (this.moveTick.complete.x && this.moveTick.complete.y) mainWindow.webContents.send('window-move-end'); } catch {}
 			}
 
 			return this;
