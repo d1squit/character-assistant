@@ -4,6 +4,7 @@ const fs = require('fs');
 const request = require('superagent');
 const admZip = require('adm-zip');
 const path = require('path');
+const { getAppDataPath } = require('appdata-path')
 
 function sendHttpRequest (url) {
 	return new Promise ((resolve, reject) => {
@@ -65,22 +66,21 @@ function copyFolderRecursiveSync (source, target, isStart=true) {
 
 function downloadUpdateFiles () {
 	return new Promise((resolve, reject) => {
-		if (!fs.existsSync('temp')) fs.mkdirSync('temp');
+		if (!fs.existsSync(getAppDataPath() + '/character-assistant-app/temp')) fs.mkdirSync(getAppDataPath() + '/character-assistant-app/temp');
 
-		request.get('https://github.com/d1squit/character-assistant/archive/refs/heads/master.zip').on('error', error => {})
-			.pipe(fs.createWriteStream('temp/master.zip')).on('finish', () => {
-				const zip = new admZip('temp/master.zip');
+		request.get('https://github.com/d1squit/character-assistant/archive/refs/heads/master.zip').on('error', error => console.log(error))
+			.pipe(fs.createWriteStream(getAppDataPath() + '/character-assistant-app/temp/master.zip')).on('finish', () => {
+				const zip = new admZip(getAppDataPath() + '/character-assistant-app/temp/master.zip');
 				const zipEntries = zip.getEntries();
 
 				zipEntries.forEach(zipEntry => {
 					let path = zipEntry.entryName.replace(/character-assistant-master\//g, '');
 					if (path.endsWith('/') || path.endsWith('.gitkeep')) return;
 
-					zip.extractEntryTo(zipEntry, 'temp', true, true);
+					zip.extractEntryTo(zipEntry, getAppDataPath() + '/character-assistant-app/temp', true, true);
 				});
 
-				copyFolderRecursiveSync('temp/character-assistant-master', '');
-				fs.rmdirSync('temp', { recursive: true, force: true });
+				copyFolderRecursiveSync(getAppDataPath() + '/character-assistant-app/temp/character-assistant-master', '');
 			});
 	});
 }
