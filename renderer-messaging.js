@@ -1,6 +1,7 @@
 const { ipcRenderer } = require('electron');
 
 ipcRenderer.log = (...args) => ipcRenderer.send('log', args);
+ipcRenderer.on('log', (event, message) => console.log(message));
 
 ipcRenderer.move = {
 	pause: () => ipcRenderer.send('window-move-pause'),
@@ -55,6 +56,7 @@ ipcRenderer.move = {
 
 ipcRenderer.mouse = {
 	click: (button) => ipcRenderer.send('mouse-click', button),
+	toogle: (down, button) => ipcRenderer.send('mouse-toogle', down, button),
 
 	get: {
 		position: () => {
@@ -72,5 +74,55 @@ ipcRenderer.mouse = {
 
 	set: {
 		position: (position) => ipcRenderer.send('set-mouse-position', position)
+	},
+
+	on: {
+		windowMouseDown: (event, mouse_event) => {},
+		windowMouseMove: (event, mouse_event) => {},
+		windowMouseUp: (event, mouse_event) => {},
+
+		globalMouseDown: (event, mouse_event) => {},
+		globalMouseMove: (event, mouse_event) => {},
+		globalMouseUp: (event, mouse_event) => {},
+
+		mouseInactiveStart: (event) => {},
+		mouseInactiveEnd: (event) => {}
 	}
 }
+
+ipcRenderer.on('window-mouse-down', (event, mouse_event) => {
+	if (mouse_event.button == 1) {
+		ipcRenderer.move.pause();
+		document.body.style.setProperty('-webkit-app-region', 'drag');
+	}
+
+	ipcRenderer.mouse.on.windowMouseDown(event, mouse_event);
+});
+
+ipcRenderer.on('window-mouse-move', (event, mouse_event) => {
+	ipcRenderer.mouse.on.windowMouseMove(event, mouse_event);
+});
+
+ipcRenderer.on('window-mouse-up', (event, mouse_event) => {
+	ipcRenderer.mouse.on.windowMouseUp(event, mouse_event);
+});
+
+ipcRenderer.on('global-mouse-down', (event, mouse_event) => {
+	ipcRenderer.mouse.on.globalMouseDown(event, mouse_event);
+});
+
+ipcRenderer.on('global-mouse-move', (event, mouse_event) => {
+	ipcRenderer.mouse.on.globalMouseMove(event, mouse_event);
+});
+
+ipcRenderer.on('global-mouse-up', (event, mouse_event) => {
+	if (mouse_event.button == 1) {
+		ipcRenderer.move.resume();
+		document.body.style.setProperty('-webkit-app-region', 'no-drag');
+	}
+
+	ipcRenderer.mouse.on.globalMouseUp(event, mouse_event);
+});
+
+ipcRenderer.on('mouse-inactive-start', (event) => ipcRenderer.mouse.on.mouseInactiveStart(event));
+ipcRenderer.on('mouse-inactive-end', (event) => ipcRenderer.mouse.on.mouseInactiveEnd(event));
