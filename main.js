@@ -81,10 +81,15 @@ childProcess.exec(`cd ${normalPath} & update-win.exe`, error => {
 			}
 		});
 
+		function quit () {
+			if (mainWindow.move.accessMove == false) app.exit();
+			else setTimeout(quit, 1000);
+		};
+
 		const menu = Menu.buildFromTemplate([
 			{
 				label: 'Close',
-				role: 'quit'
+				click: () => quit()
 			},
 			{
 				label: 'Settings',
