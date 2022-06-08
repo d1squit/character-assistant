@@ -69,6 +69,11 @@ function Character () {
 		});
 	}
 
+	ipcRenderer.on('window-move-end', () => {
+		this.playAnimation(this.animations.idle_animation);
+		this.on.windowMoveEnd();
+	});
+
 	ipcRenderer.on('character-flip-left', () => { characterImage.style.webkitTransform = 'scaleX(-1)'; characterImage.style.transform = 'scaleX(-1)'; });
 	ipcRenderer.on('character-flip-right', () => { characterImage.style.webkitTransform = ''; characterImage.style.transform = ''; });
 
