@@ -68,7 +68,7 @@ childProcess.exec(`cd ${normalPath} & update-win.exe`, error => {
 			width: settings.size.width,
 			height: settings.size.height,
 			frame: false,
-			// resizable: false,
+			resizable: false,
 			alwaysOnTop: true,
 			transparent: true,
 			acceptFirstMouse: true,
