@@ -75,7 +75,7 @@ function downloadUpdateFiles () {
 
 				zipEntries.forEach(zipEntry => {
 					let path = zipEntry.entryName.replace(/character-assistant-master\//g, '');
-					if (path.endsWith('/') || path.endsWith('.gitkeep')) return;
+					if (path.endsWith('/') || path.endsWith('.gitkeep') || path.endsWith('.devmode')) return;
 
 					zip.extractEntryTo(zipEntry, getAppDataPath() + '/character-assistant-app/temp', true, true);
 				});
