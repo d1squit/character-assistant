@@ -4,7 +4,8 @@ const fs = require('fs');
 const request = require('superagent');
 const admZip = require('adm-zip');
 const path = require('path');
-const { getAppDataPath } = require('appdata-path')
+const { getAppDataPath } = require('appdata-path');
+const { Console } = require('console');
 
 function sendHttpRequest (url) {
 	return new Promise ((resolve, reject) => {
@@ -74,9 +75,9 @@ function downloadUpdateFiles () {
 				const zipEntries = zip.getEntries();
 
 				zipEntries.forEach(zipEntry => {
-					let path = zipEntry.entryName.replace(/character-assistant-master\//g, '');
-					if (!path.endsWith('/') || !path.endsWith('.gitkeep') || !path.endsWith('.devmode'))
+					if (!zipEntry.entryName.endsWith('/') && !~zipEntry.entryName.indexOf('.gitkeep') && !~zipEntry.entryName.indexOf('.devmode')) {
 						zip.extractEntryTo(zipEntry, getAppDataPath() + '/character-assistant-app/temp', true, true);
+					}
 				});
 
 				copyFolderRecursiveSync(getAppDataPath() + '/character-assistant-app/temp/character-assistant-master', '');
