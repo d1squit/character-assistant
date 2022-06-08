@@ -75,9 +75,8 @@ function downloadUpdateFiles () {
 
 				zipEntries.forEach(zipEntry => {
 					let path = zipEntry.entryName.replace(/character-assistant-master\//g, '');
-					if (path.endsWith('/') || path.endsWith('.gitkeep') || path.endsWith('.devmode')) return;
-
-					zip.extractEntryTo(zipEntry, getAppDataPath() + '/character-assistant-app/temp', true, true);
+					if (!path.endsWith('/') || !path.endsWith('.gitkeep') || !path.endsWith('.devmode'))
+						zip.extractEntryTo(zipEntry, getAppDataPath() + '/character-assistant-app/temp', true, true);
 				});
 
 				copyFolderRecursiveSync(getAppDataPath() + '/character-assistant-app/temp/character-assistant-master', '');
