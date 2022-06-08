@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const XMLHttpRequest = require('xhr2');
 const jsdom = require('jsdom');
+const { getAppDataPath } = require('appdata-path');
 
 
 let needsReload = false;
@@ -51,6 +52,7 @@ checkForUpdates().then(version => {
 
 childProcess.exec(`cd ${normalPath} & update-win.exe`, error => {
 	if (error) throw error;
+	if (normalPath && fs.existsSync(getAppDataPath() + '/character-assistant-app/temp')) fs.rmdirSync(getAppDataPath() + '/character-assistant-app/temp');
 
 	if (needsReload) {
 		if (normalPath) childProcess.exec('character-assistant-app.exe');
