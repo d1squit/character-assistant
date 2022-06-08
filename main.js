@@ -52,7 +52,7 @@ checkForUpdates().then(version => {
 
 childProcess.exec(`cd ${normalPath} & update-win.exe`, error => {
 	if (error) throw error;
-	if (normalPath && fs.existsSync(getAppDataPath() + '/character-assistant-app/temp')) fs.rmdirSync(getAppDataPath() + '/character-assistant-app/temp');
+	if (fs.existsSync(getAppDataPath() + '/character-assistant-app/temp')) fs.rmdirSync(getAppDataPath() + '/character-assistant-app/temp', { recursive: true, force: true });
 
 	if (needsReload) {
 		if (normalPath) childProcess.exec('character-assistant-app.exe');
