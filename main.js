@@ -51,8 +51,6 @@ checkForUpdates().then(version => {
 
 childProcess.exec(`cd ${normalPath} & update-win.exe`, error => {
 	if (error) throw error;
-	if (normalPath && fs.existsSync('resources/app/.devmode')) fs.rmSync(normalPath + '.devmode');
-	if (normalPath && fs.existsSync('resources/app/temp')) fs.rmdirSync(normalPath + 'temp');
 
 	if (needsReload) {
 		if (normalPath) childProcess.exec('character-assistant-app.exe');
@@ -89,7 +87,7 @@ childProcess.exec(`cd ${normalPath} & update-win.exe`, error => {
 			{
 				label: 'Settings',
 				click: () => {
-					require('child_process').exec(`start "" "${__dirname}/character.json"`);
+					childProcess.exec(`start "" "${__dirname}/character.json"`);
 				}
 			}
 		]);
